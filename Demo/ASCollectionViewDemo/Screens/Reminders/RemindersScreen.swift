@@ -45,16 +45,16 @@ struct RemindersScreen: View
 						}
 					}
 				}
-				.sectionHeader
+			}
+			.sectionHeader
+			{
+				HStack
 				{
-					HStack
-					{
-						Text("My Lists")
-							.font(.headline)
-							.bold()
-							.padding()
-						Spacer()
-					}
+					Text("My Lists")
+						.font(.headline)
+						.bold()
+						.padding()
+					Spacer()
 				}
 			}
 

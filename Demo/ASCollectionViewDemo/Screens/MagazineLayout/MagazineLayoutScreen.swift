@@ -30,16 +30,16 @@ struct MagazineLayoutScreen: View
 					}
 				}
 				.onCellEvent(onCellEvent)
-				.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
+			}
+			.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
+			{
+				HStack
 				{
-					HStack
-					{
-						Text("Section \(offset)")
-							.padding()
-						Spacer()
-					}
-					.background(Color.blue)
+					Text("Section \(offset)")
+						.padding()
+					Spacer()
 				}
+				.background(Color.blue)
 			}
 		}
 	}

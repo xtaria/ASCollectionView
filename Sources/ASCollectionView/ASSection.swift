@@ -41,9 +41,9 @@ public struct ASSection<SectionID: Hashable>
 	 - id: The id for this section
 	 - dataSource: The datasource
 	 */
-	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View, Container: View>(
 		id: SectionID,
-		dataSource: ASSectionDataSource<DataCollection, DataID, Content, Content>) where DataCollection.Index == Int
+		dataSource: ASSectionDataSource<DataCollection, DataID, Content, Container>) where DataCollection.Index == Int
 	{
 		self.id = id
 		self.dataSource = dataSource
@@ -56,9 +56,9 @@ public struct ASSection<SectionID: Hashable>
 	 - id: The id for this section
 	 - dataSource: The datasource
 	 */
-	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View, Container: View>(
 		id: SectionID,
-		dataSource: () -> ASSectionDataSource<DataCollection, DataID, Content, Content>) where DataCollection.Index == Int
+		dataSource: () -> ASSectionDataSource<DataCollection, DataID, Content, Container>) where DataCollection.Index == Int
 	{
 		self.id = id
 		self.dataSource = dataSource()
@@ -112,5 +112,59 @@ public extension ASCollectionViewSection
 
 	init<Content: View>(id: SectionID, content: () -> Content) {
 		self.init(id: id, container: { $0 }, content: content)
+	}
+}
+
+// MARK: Supplementary Views
+
+public extension ASSection
+{
+	func sectionHeader<Content: View>(content: () -> Content?) -> Self
+	{
+		var section = self
+		section.dataSource.setHeaderView(content())
+		return section
+	}
+
+	func sectionFooter<Content: View>(content: () -> Content?) -> Self
+	{
+		var section = self
+		section.dataSource.setFooterView(content())
+		return section
+	}
+
+	func sectionSupplementary<Content: View>(ofKind kind: String, content: () -> Content?) -> Self
+	{
+		var section = self
+		section.dataSource.setSupplementaryView(content(), ofKind: kind)
+		return section
+	}
+}
+
+// MARK: ASTableView specific modifiers
+
+public extension ASSection {
+	func sectionHeaderTableViewInsetGrouped<Content: View>(content: () -> Content?) -> Self
+	{
+		var section = self
+		let insetGroupedContent =
+			HStack {
+				content()
+				Spacer()
+			}
+			.font(.headline)
+			.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
+
+		section.dataSource.setHeaderView(insetGroupedContent)
+		return section
+	}
+
+	func tableViewSetEstimatedSizes(rowHeight: CGFloat? = nil, headerHeight: CGFloat? = nil, footerHeight: CGFloat? = nil) -> Self
+	{
+		var section = self
+		section.dataSource.estimatedRowHeight = rowHeight
+		section.dataSource.estimatedHeaderHeight = headerHeight
+		section.dataSource.estimatedFooterHeight = footerHeight
+		return section
 	}
 }

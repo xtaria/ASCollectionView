@@ -50,21 +50,21 @@ struct InstaFeedScreen: View
 					PostView(post: item)
 				}
 				.onCellEvent(onCellEventPosts)
-				.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
-				.sectionHeader
+			}
+			.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
+			.sectionHeader
+			{
+				VStack(spacing: 0)
 				{
-					VStack(spacing: 0)
+					HStack
 					{
-						HStack
-						{
-							Text("Demo sticky header view")
-								.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
-							Spacer()
-						}
-						Divider()
+						Text("Demo sticky header view")
+							.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+						Spacer()
 					}
-					.background(Color(.secondarySystemBackground))
+					Divider()
 				}
+				.background(Color(.secondarySystemBackground))
 			}
 		}
 	}

@@ -47,10 +47,10 @@ struct AppStoreScreen: View
 				.onCellEvent {
 					self.onCellEvent($0, sectionID: sectionID)
 				}
-				.sectionHeader
-				{
-					self.header(withTitle: sectionData.sectionTitle)
-				}
+			}
+			.sectionHeader
+			{
+				self.header(withTitle: sectionData.sectionTitle)
 			}
 		}
 	}

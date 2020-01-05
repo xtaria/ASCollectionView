@@ -24,9 +24,14 @@ internal protocol ASSectionDataSourceProtocol
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 
-	var estimatedRowHeight: CGFloat? { get }
-	var estimatedHeaderHeight: CGFloat? { get }
-	var estimatedFooterHeight: CGFloat? { get }
+	// Non-Data specific -> Set from ASSection
+	mutating func setHeaderView<Content: View>(_ view: Content?)
+	mutating func setFooterView<Content: View>(_ view: Content?)
+	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String)
+
+	var estimatedRowHeight: CGFloat? { get set }
+	var estimatedHeaderHeight: CGFloat? { get set }
+	var estimatedFooterHeight: CGFloat? { get set }
 }
 
 public enum CellEvent<Data>
@@ -284,11 +289,11 @@ public extension ASSectionDataSource where Container == Content
  public extension ASSectionDataSource where DataCollection == [ASCollectionViewStaticContent], DataID == ASCollectionViewStaticContent.ID, Content == AnyView, Container == Content
  {
  /**
-      Initializes a section with static content
+       Initializes a section with static content
 
-      - Parameters:
-      - id: The id for this section
-      - content: A closure returning a number of SwiftUI views to display in the collection view
+       - Parameters:
+       - id: The id for this section
+       - content: A closure returning a number of SwiftUI views to display in the collection view
   */
  init(@ViewArrayBuilder content: () -> [AnyView])
  {
@@ -302,11 +307,11 @@ public extension ASSectionDataSource where Container == Content
  }
 
  /**
-      Initializes a section with a single view
+       Initializes a section with a single view
 
-      - Parameters:
-      - id: The id for this section
-      - content: A single SwiftUI views to display in the collection view
+       - Parameters:
+       - id: The id for this section
+       - content: A single SwiftUI views to display in the collection view
   */
  init<StaticItem: View>(container: @escaping ((AnyView) -> Container), content: () -> StaticItem)
  {
@@ -354,7 +359,7 @@ public extension ASSectionDataSource where DataCollection.Element: Identifiable,
 	}
 }
 
-// MARK: PUBLIC MODIFIERS
+// MARK: PUBLIC MODIFIERS (DATA-SPECIFIC)
 
 public extension ASSectionDataSource {
 	func onCellEvent(_ onCellEvent: OnCellEvent<DataCollection.Element>?) -> Self
@@ -382,58 +387,6 @@ public extension ASSectionDataSource {
 	{
 		var dataSource = self
 		dataSource.onSwipeToDelete = onSwipeToDelete
-		return dataSource
-	}
-}
-
-public extension ASSectionDataSource
-{
-	func sectionHeader<Content: View>(content: () -> Content?) -> Self
-	{
-		var dataSource = self
-		dataSource.setHeaderView(content())
-		return dataSource
-	}
-
-	func sectionFooter<Content: View>(content: () -> Content?) -> Self
-	{
-		var dataSource = self
-		dataSource.setFooterView(content())
-		return dataSource
-	}
-
-	func sectionSupplementary<Content: View>(ofKind kind: String, content: () -> Content?) -> Self
-	{
-		var dataSource = self
-		dataSource.setSupplementaryView(content(), ofKind: kind)
-		return dataSource
-	}
-}
-
-// MARK: ASTableView specific modifiers
-
-public extension ASSectionDataSource {
-	func sectionHeaderTableViewInsetGrouped<Content: View>(content: () -> Content?) -> Self
-	{
-		var dataSource = self
-		let insetGroupedContent =
-			HStack {
-				content()
-				Spacer()
-			}
-			.font(.headline)
-			.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
-
-		dataSource.setHeaderView(insetGroupedContent)
-		return dataSource
-	}
-
-	func tableViewSetEstimatedSizes(rowHeight: CGFloat? = nil, headerHeight: CGFloat? = nil, footerHeight: CGFloat? = nil) -> Self
-	{
-		var dataSource = self
-		dataSource.estimatedRowHeight = rowHeight
-		dataSource.estimatedHeaderHeight = headerHeight
-		dataSource.estimatedFooterHeight = footerHeight
 		return dataSource
 	}
 }

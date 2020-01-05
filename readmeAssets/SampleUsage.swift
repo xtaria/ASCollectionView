@@ -57,21 +57,21 @@ struct ExampleView: View
 							Text("Complex layout - \(item)")
 						)
 				}
-				.sectionHeader
+			}
+			.sectionHeader
+			{
+				HStack
 				{
-					HStack
-					{
-						Text("Section header")
-							.padding()
-						Spacer()
-					}
-					.background(Color.yellow)
-				}
-				.sectionFooter
-				{
-					Text("This is a section footer!")
+					Text("Section header")
 						.padding()
+					Spacer()
 				}
+				.background(Color.yellow)
+			}
+			.sectionFooter
+			{
+				Text("This is a section footer!")
+					.padding()
 			}
 		}
 		.layout
