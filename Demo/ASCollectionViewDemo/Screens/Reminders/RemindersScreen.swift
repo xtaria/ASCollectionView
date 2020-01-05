@@ -13,18 +13,14 @@ struct RemindersScreen: View
 		case footnote
 	}
 
-	@State var upperData: [GroupModel] = [
-		GroupModel(icon: "calendar", title: "Today", color: .blue),
-		GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
-		GroupModel(icon: "tray.fill", title: "All", color: .gray),
-		GroupModel(icon: "flag.fill", title: "Flagged", color: .red)
-	]
-	@State var lowerData: [GroupModel] = [
-		GroupModel(icon: "list.bullet", title: "Todo"),
-		GroupModel(icon: "cart.fill", title: "Groceries"),
-		GroupModel(icon: "house.fill", title: "House renovation"),
-		GroupModel(icon: "book.fill", title: "Reading list")
-	]
+	@State var upperData: [GroupModel] = [GroupModel(icon: "calendar", title: "Today", color: .blue),
+										  GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
+										  GroupModel(icon: "tray.fill", title: "All", color: .gray),
+										  GroupModel(icon: "flag.fill", title: "Flagged", color: .red)]
+	@State var lowerData: [GroupModel] = [GroupModel(icon: "list.bullet", title: "Todo"),
+										  GroupModel(icon: "cart.fill", title: "Groceries"),
+										  GroupModel(icon: "house.fill", title: "House renovation"),
+										  GroupModel(icon: "book.fill", title: "Reading list")]
 
 	let addNewModel = GroupModel(icon: "plus", title: "Create new list", contentCount: nil, color: .green)
 
@@ -32,47 +28,49 @@ struct RemindersScreen: View
 	{
 		ASCollectionView
 		{
-			ASCollectionViewSection(id: Section.upper, data: self.upperData)
-			{ model, _ in
-				GroupLarge(model: model)
+			ASSection<Section>(id: .upper) {
+				ASSectionDataSource(data: self.upperData) { model, _ in
+					GroupLarge(model: model)
+				}
 			}
 
-			ASCollectionViewSection(id: Section.list, data: self.lowerData)
-			{ model, info in
-				VStack(spacing: 0)
-				{
-					GroupSmall(model: model)
-					if !info.isLastInSection
+			ASSection<Section>(id: .list) {
+				ASSectionDataSource(data: self.lowerData) { model, info in
+					VStack(spacing: 0)
 					{
-						Divider()
+						GroupSmall(model: model)
+						if !info.isLastInSection
+						{
+							Divider()
+						}
+					}
+				}
+				.sectionHeader
+				{
+					HStack
+					{
+						Text("My Lists")
+							.font(.headline)
+							.bold()
+							.padding()
+						Spacer()
 					}
 				}
 			}
-			.sectionHeader
-			{
-				HStack
-				{
-					Text("My Lists")
-						.font(.headline)
-						.bold()
-						.padding()
-					Spacer()
-				}
-			}
 
-			ASCollectionViewSection(id: Section.addNew)
+			ASSection<Section>(id: .addNew)
 			{
 				GroupSmall(model: self.addNewModel)
 			}
-			
-			ASCollectionViewSection(id: Section.footnote)
+
+			ASSection<Section>(id: .footnote)
 			{
 				HStack
-					{
-						Spacer()
-						Text("Try rotating the screen")
-							.padding()
-						Spacer()
+				{
+					Spacer()
+					Text("Try rotating the screen")
+						.padding()
+					Spacer()
 				}
 			}
 		}
@@ -113,7 +111,7 @@ struct RemindersScreen: View
 
 					let section = NSCollectionLayoutSection(group: group)
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-					
+
 					let supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
 					let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
 						layoutSize: supplementarySize,

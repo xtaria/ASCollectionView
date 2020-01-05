@@ -19,47 +19,46 @@ struct PhotoGridScreen: View
 
 	typealias SectionID = Int
 
-	var section: ASCollectionViewSection<SectionID>
+	var section: ASSection<SectionID>
 	{
-		ASCollectionViewSection(
-			id: 0,
-			data: data,
-			onCellEvent: onCellEvent,
-			onDragDropEvent: onDragDropEvent,
-			itemProvider: { item in
+		ASSection(id: 0) {
+			ASSectionDataSource(data: data) { item, state in
+				ZStack(alignment: .bottomTrailing)
+				{
+					GeometryReader
+					{ geom in
+						NavigationLink(destination: self.destinationForItem(item)) {
+							ASRemoteImageView(item.url)
+								.aspectRatio(1, contentMode: .fill)
+								.frame(width: geom.size.width, height: geom.size.height)
+								.clipped()
+						}
+						.buttonStyle(PlainButtonStyle())
+						.disabled(self.isEditing)
+					}
+
+					if state.isSelected
+					{
+						ZStack
+						{
+							Circle()
+								.fill(Color.blue)
+							Circle()
+								.strokeBorder(Color.white, lineWidth: 2)
+							Image(systemName: "checkmark")
+								.font(.system(size: 10, weight: .bold))
+								.foregroundColor(.white)
+						}
+						.frame(width: 20, height: 20)
+						.padding(10)
+					}
+				}
+			}
+			.onCellEvent(onCellEvent)
+			.onDragDropEvent(onDragDropEvent)
+			.itemProvider { item in
 				// Example of returning a custom item provider (eg. to support drag-drop to other apps)
 				NSItemProvider(object: item.url as NSURL)
-		})
-		{ item, state in
-			ZStack(alignment: .bottomTrailing)
-			{
-				GeometryReader
-				{ geom in
-					NavigationLink(destination: self.destinationForItem(item)) {
-						ASRemoteImageView(item.url)
-							.aspectRatio(1, contentMode: .fill)
-							.frame(width: geom.size.width, height: geom.size.height)
-							.clipped()
-					}
-					.buttonStyle(PlainButtonStyle())
-					.disabled(self.isEditing)
-				}
-
-				if state.isSelected
-				{
-					ZStack
-					{
-						Circle()
-							.fill(Color.blue)
-						Circle()
-							.strokeBorder(Color.white, lineWidth: 2)
-						Image(systemName: "checkmark")
-							.font(.system(size: 10, weight: .bold))
-							.foregroundColor(.white)
-					}
-					.frame(width: 20, height: 20)
-					.padding(10)
-				}
 			}
 		}
 	}
@@ -110,14 +109,15 @@ struct PhotoGridScreen: View
 			}
 		}
 	}
-	
-	func destinationForItem(_ item: Post) -> some View {
+
+	func destinationForItem(_ item: Post) -> some View
+	{
 		ScrollView {
 			PostView(post: item)
 				.onAppear {
 					ASRemoteImageManager.shared.load(item.url)
 					ASRemoteImageManager.shared.load(item.usernamePhotoURL)
-			}
+				}
 		}
 	}
 

@@ -74,7 +74,7 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 {
 	public func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 	{
-		guard let dragItem = self.coordinator?.dragItem(for: indexPath) else { return [] }
+		guard let dragItem = coordinator?.dragItem(for: indexPath) else { return [] }
 		return [dragItem]
 	}
 

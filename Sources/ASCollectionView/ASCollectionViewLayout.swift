@@ -106,10 +106,11 @@ public struct ASCollectionLayout<SectionID: Hashable>
 	}
 }
 
-fileprivate extension NSCollectionLayoutSection {
-	static var placeholder: NSCollectionLayoutSection {
-		//Used to avoid a crash when UICollectionViewCompositionalLayout requests a NSCollectionLayoutSection for a section that no longer exists
-		return NSCollectionLayoutSection(group: NSCollectionLayoutGroup(layoutSize: NSCollectionLayoutSize(widthDimension: .absolute(1), heightDimension: .absolute(1))))
+private extension NSCollectionLayoutSection {
+	static var placeholder: NSCollectionLayoutSection
+	{
+		// Used to avoid a crash when UICollectionViewCompositionalLayout requests a NSCollectionLayoutSection for a section that no longer exists
+		NSCollectionLayoutSection(group: NSCollectionLayoutGroup(layoutSize: NSCollectionLayoutSize(widthDimension: .absolute(1), heightDimension: .absolute(1))))
 	}
 }
 

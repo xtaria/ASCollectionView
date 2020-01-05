@@ -5,14 +5,16 @@ import SwiftUI
 
 struct SingleSectionExampleView: View
 {
-	@State var dataExample = (0..<21).map { $0 }
+	@State var dataExample = (0 ..< 21).map { $0 }
 
 	var body: some View
 	{
-		ASCollectionView(data: dataExample, dataID: \.self)
-		{ item, _ in
-			Color.blue
-				.overlay(Text("\(item)"))
+		ASCollectionView {
+			ASSectionDataSource(data: dataExample, id: \.self)
+			{ item, _ in
+				Color.blue
+					.overlay(Text("\(item)"))
+			}
 		}
 		.layout
 		{
@@ -27,47 +29,49 @@ struct SingleSectionExampleView: View
 
 struct ExampleView: View
 {
-	@State var dataExampleA = (0..<21).map { $0 }
-	@State var dataExampleB = (0..<15).map { "ITEM \($0)" }
+	@State var dataExampleA = (0 ..< 21).map { $0 }
+	@State var dataExampleB = (0 ..< 15).map { "ITEM \($0)" }
 
 	var body: some View
 	{
 		ASCollectionView
 		{
-			ASCollectionViewSection(
-				id: 0,
-				data: dataExampleA,
-				dataID: \.self)
-			{ item, _ in
-				Color.blue
-					.overlay(
-						Text("\(item)")
-					)
-			}
-			ASCollectionViewSection(
-				id: 1,
-				data: dataExampleB,
-				dataID: \.self)
-			{ item, _ in
-				Color.green
-					.overlay(
-						Text("Complex layout - \(item)")
-					)
-			}
-			.sectionHeader
-			{
-				HStack
-				{
-					Text("Section header")
-						.padding()
-					Spacer()
+			ASCollectionViewSection(id: 0) {
+				ASSectionDataSource(
+					data: dataExampleA,
+					id: \.self)
+				{ item, _ in
+					Color.blue
+						.overlay(
+							Text("\(item)")
+						)
 				}
-				.background(Color.yellow)
 			}
-			.sectionFooter
-			{
-				Text("This is a section footer!")
-					.padding()
+			ASCollectionViewSection(id: 1) {
+				ASSectionDataSource(
+					data: dataExampleB,
+					id: \.self)
+				{ item, _ in
+					Color.green
+						.overlay(
+							Text("Complex layout - \(item)")
+						)
+				}
+				.sectionHeader
+				{
+					HStack
+					{
+						Text("Section header")
+							.padding()
+						Spacer()
+					}
+					.background(Color.yellow)
+				}
+				.sectionFooter
+				{
+					Text("This is a section footer!")
+						.padding()
+				}
 			}
 		}
 		.layout

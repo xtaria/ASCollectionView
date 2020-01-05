@@ -9,6 +9,9 @@ internal protocol ASSectionDataSourceProtocol
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	func configureHostingController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
+	var supplementaryKinds: Set<String> { get }
+	func supplementary(ofKind kind: String) -> AnyView?
+
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
 	func prefetch(_ indexPaths: [IndexPath])
@@ -17,9 +20,13 @@ internal protocol ASSectionDataSourceProtocol
 	func removeItem(from indexPath: IndexPath)
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
-	func onDelete(indexPath: IndexPath, completionHandler: ((Bool) -> Void))
+	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
+
+	var estimatedRowHeight: CGFloat? { get }
+	var estimatedHeaderHeight: CGFloat? { get }
+	var estimatedFooterHeight: CGFloat? { get }
 }
 
 public enum CellEvent<Data>
@@ -46,7 +53,7 @@ public enum DragDrop<Data>
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
-public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: ((Bool) -> Void)) -> Void)
+public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
 
 public struct CellContext
 {
@@ -55,20 +62,38 @@ public struct CellContext
 	public var isLastInSection: Bool
 }
 
-internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID, Content, Container>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View, Container: View, DataCollection.Index == Int
+public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View, Container: View>: ASSectionDataSourceProtocol where DataCollection.Index == Int
 {
-	typealias Data = DataCollection.Element
 	var data: DataCollection
-	var dataIDKeyPath: KeyPath<Data, DataID>
-	var container: ((Content) -> Container)
-	var onCellEvent: OnCellEvent<Data>?
-	var onDragDrop: OnDragDrop<Data>?
-	var itemProvider: ItemProvider<Data>?
-	var onSwipeToDelete: OnSwipeToDelete<Data>?
-	var content: (Data, CellContext) -> Content
+	var dataIDKeyPath: KeyPath<DataCollection.Element, DataID>
+	var container: (Content) -> Container
+	var content: (DataCollection.Element, CellContext) -> Content
+
+	var supplementaryViews: [String: AnyView] = [:]
+	var onCellEvent: OnCellEvent<DataCollection.Element>?
+	var onDragDrop: OnDragDrop<DataCollection.Element>?
+	var itemProvider: ItemProvider<DataCollection.Element>?
+	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
+
+	// Only relevant for ASTableView
+	public var estimatedRowHeight: CGFloat?
+	public var estimatedHeaderHeight: CGFloat?
+	public var estimatedFooterHeight: CGFloat?
+
+	// MARK: Calculated vars
 
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
+
+	var supplementaryKinds: Set<String>
+	{
+		Set(supplementaryViews.keys)
+	}
+
+	func supplementary(ofKind kind: String) -> AnyView?
+	{
+		supplementaryViews[kind]
+	}
 
 	func cellContext(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> CellContext
 	{
@@ -83,7 +108,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
 		let containedView = container(view)
-		
+
 		if let existingHC = reusingController as? ASHostingController<Container>
 		{
 			existingHC.setView(containedView)
@@ -98,7 +123,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	{
-		return data[safe: indexPath.item]
+		data[safe: indexPath.item]
 	}
 
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
@@ -128,27 +153,29 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func prefetch(_ indexPaths: [IndexPath])
 	{
-		let dataToPrefetch: [Data] = indexPaths.compactMap
+		let dataToPrefetch: [DataCollection.Element] = indexPaths.compactMap
 		{
-			return data[safe: $0.item]
+			data[safe: $0.item]
 		}
 		onCellEvent?(.prefetchForData(data: dataToPrefetch))
 	}
 
 	func cancelPrefetch(_ indexPaths: [IndexPath])
 	{
-		let dataToCancelPrefetch: [Data] = indexPaths.compactMap
+		let dataToCancelPrefetch: [DataCollection.Element] = indexPaths.compactMap
 		{
-			return data[safe: $0.item]
+			data[safe: $0.item]
 		}
 		onCellEvent?(.cancelPrefetchForData(data: dataToCancelPrefetch))
 	}
-	
-	func supportsDelete(at indexPath: IndexPath) -> Bool {
+
+	func supportsDelete(at indexPath: IndexPath) -> Bool
+	{
 		onSwipeToDelete != nil
 	}
-	
-	func onDelete(indexPath: IndexPath, completionHandler: ((Bool) -> Void)) {
+
+	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	{
 		guard let item = data[safe: indexPath.item] else { return }
 		onSwipeToDelete?(item, completionHandler)
 	}
@@ -157,7 +184,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		guard dragEnabled else { return nil }
 		guard let item = data[safe: indexPath.item] else { return nil }
-		
+
 		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
 		let dragItem = UIDragItem(itemProvider: itemProvider)
 		dragItem.localObject = item
@@ -176,10 +203,237 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		let index = max(data.startIndex, min(indexPath.item, data.endIndex))
 		let indexPath = IndexPath(item: index, section: indexPath.section)
 		let dataItems = items.compactMap
-		{ (dragItem) -> Data? in
-			guard let item = dragItem.localObject as? Data else { return nil }
+		{ (dragItem) -> DataCollection.Element? in
+			guard let item = dragItem.localObject as? DataCollection.Element else { return nil }
 			return item
 		}
 		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: indexPath))
+	}
+}
+
+// MARK: SUPPLEMENTARY VIEWS - INTERNAL
+
+internal extension ASSectionDataSource
+{
+	mutating func setHeaderView<Content: View>(_ view: Content?)
+	{
+		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionHeader)
+	}
+
+	mutating func setFooterView<Content: View>(_ view: Content?)
+	{
+		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionFooter)
+	}
+
+	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String)
+	{
+		guard let view = view else
+		{
+			supplementaryViews.removeValue(forKey: kind)
+			return
+		}
+
+		supplementaryViews[kind] = AnyView(view)
+	}
+}
+
+// MARK: PUBLIC Initialisers
+
+public extension ASSectionDataSource {
+	/**
+	 Initializes a  section with data
+
+	 - Parameters:
+	 - id: The id for this section
+	 - data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
+	 - dataID: The keypath to a hashable identifier of each data item
+	 - onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
+	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
+	 - contentBuilder: A closure returning a SwiftUI view for the given data item
+	 */
+	init(
+		data: DataCollection,
+		id dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
+		container: @escaping ((Content) -> Container),
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+	{
+		self.data = data
+		self.dataIDKeyPath = dataIDKeyPath
+		self.container = container
+		content = contentBuilder
+	}
+}
+
+public extension ASSectionDataSource where Container == Content
+{
+	init(
+		data: DataCollection,
+		id dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+	{
+		self.data = data
+		self.dataIDKeyPath = dataIDKeyPath
+		container = { $0 }
+		content = contentBuilder
+	}
+}
+
+// MARK: STATIC CONTENT SECTION
+
+/*
+ public extension ASSectionDataSource where DataCollection == [ASCollectionViewStaticContent], DataID == ASCollectionViewStaticContent.ID, Content == AnyView, Container == Content
+ {
+ /**
+      Initializes a section with static content
+
+      - Parameters:
+      - id: The id for this section
+      - content: A closure returning a number of SwiftUI views to display in the collection view
+  */
+ init(@ViewArrayBuilder content: () -> [AnyView])
+ {
+ 	self.data = content().enumerated().map
+ 		{
+ 			ASCollectionViewStaticContent(index: $0.offset, view: $0.element)
+ 	}
+ 	self.dataIDKeyPath = \.id
+ 	self.container = { $0 }
+ 	self.content = { staticContent, _ in staticContent.view }
+ }
+
+ /**
+      Initializes a section with a single view
+
+      - Parameters:
+      - id: The id for this section
+      - content: A single SwiftUI views to display in the collection view
+  */
+ init<StaticItem: View>(container: @escaping ((AnyView) -> Container), content: () -> StaticItem)
+ {
+ 	self.data = [ASCollectionViewStaticContent(index: 0, view: AnyView(content()))]
+ 	self.dataIDKeyPath = \.id
+ 	self.container = { $0 }
+ 	self.content = { staticContent, _ in staticContent.view }
+ }
+
+ }*/
+
+// MARK: IDENTIFIABLE DATA SECTION
+
+public extension ASSectionDataSource where DataCollection.Element: Identifiable, DataID == DataCollection.Element.ID
+{
+	/**
+	 Initializes a  section with identifiable data
+
+	 - Parameters:
+	 - id: The id for this section
+	 - data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
+	 - onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
+	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
+	 - contentBuilder: A closure returning a SwiftUI view for the given data item
+	 */
+	init(
+		data: DataCollection,
+		container: @escaping ((Content) -> Container),
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+	{
+		self.data = data
+		dataIDKeyPath = \.id
+		self.container = container
+		content = contentBuilder
+	}
+}
+
+public extension ASSectionDataSource where DataCollection.Element: Identifiable, DataID == DataCollection.Element.ID, Container == Content
+{
+	init(
+		data: DataCollection,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+	{
+		self.init(data: data, container: { $0 }, contentBuilder: contentBuilder)
+	}
+}
+
+// MARK: PUBLIC MODIFIERS
+
+public extension ASSectionDataSource {
+	func onCellEvent(_ onCellEvent: OnCellEvent<DataCollection.Element>?) -> Self
+	{
+		var dataSource = self
+		dataSource.onCellEvent = onCellEvent
+		return dataSource
+	}
+
+	func onDragDropEvent(_ onDragDropEvent: OnDragDrop<DataCollection.Element>?) -> Self
+	{
+		var dataSource = self
+		dataSource.onDragDrop = onDragDropEvent
+		return dataSource
+	}
+
+	func itemProvider(_ itemProvider: ItemProvider<DataCollection.Element>?) -> Self
+	{
+		var dataSource = self
+		dataSource.itemProvider = itemProvider
+		return dataSource
+	}
+
+	func onSwipeToDelete(_ onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?) -> Self
+	{
+		var dataSource = self
+		dataSource.onSwipeToDelete = onSwipeToDelete
+		return dataSource
+	}
+}
+
+public extension ASSectionDataSource
+{
+	func sectionHeader<Content: View>(content: () -> Content?) -> Self
+	{
+		var dataSource = self
+		dataSource.setHeaderView(content())
+		return dataSource
+	}
+
+	func sectionFooter<Content: View>(content: () -> Content?) -> Self
+	{
+		var dataSource = self
+		dataSource.setFooterView(content())
+		return dataSource
+	}
+
+	func sectionSupplementary<Content: View>(ofKind kind: String, content: () -> Content?) -> Self
+	{
+		var dataSource = self
+		dataSource.setSupplementaryView(content(), ofKind: kind)
+		return dataSource
+	}
+}
+
+// MARK: ASTableView specific modifiers
+
+public extension ASSectionDataSource {
+	func sectionHeaderTableViewInsetGrouped<Content: View>(content: () -> Content?) -> Self
+	{
+		var dataSource = self
+		let insetGroupedContent =
+			HStack {
+				content()
+				Spacer()
+			}
+			.font(.headline)
+			.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
+
+		dataSource.setHeaderView(insetGroupedContent)
+		return dataSource
+	}
+
+	func tableViewSetEstimatedSizes(rowHeight: CGFloat? = nil, headerHeight: CGFloat? = nil, footerHeight: CGFloat? = nil) -> Self
+	{
+		var dataSource = self
+		dataSource.estimatedRowHeight = rowHeight
+		dataSource.estimatedHeaderHeight = headerHeight
+		dataSource.estimatedFooterHeight = footerHeight
+		return dataSource
 	}
 }

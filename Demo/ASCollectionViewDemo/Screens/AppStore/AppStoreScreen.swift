@@ -5,7 +5,7 @@ import SwiftUI
 
 struct AppStoreScreen: View
 {
-	@State var data: [(sectionTitle: String, apps: [App])] = (0...20).map
+	@State var data: [(sectionTitle: String, apps: [App])] = (0 ... 20).map
 	{
 		(Lorem.title, DataSource.appsForSection($0))
 	}
@@ -26,31 +26,31 @@ struct AppStoreScreen: View
 		}
 	}
 
-	var sections: [ASCollectionViewSection<Int>]
+	var sections: [ASSection<Int>]
 	{
 		data.enumerated().map
-		{ (sectionID, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(
-				id: sectionID,
-				data: sectionData.apps,
-				onCellEvent: {
+		{ (sectionID, sectionData) -> ASSection<Int> in
+			ASSection(id: sectionID) {
+				ASSectionDataSource(data: sectionData.apps)
+				{ item, _ in
+					if sectionID == 0 {
+						AppViewFeature(app: item)
+					}
+					else if sectionID == 1 {
+						AppViewLarge(app: item)
+					}
+					else
+					{
+						AppViewCompact(app: item)
+					}
+				}
+				.onCellEvent {
 					self.onCellEvent($0, sectionID: sectionID)
-			})
-			{ item, _ in
-				if sectionID == 0 {
-					AppViewFeature(app: item)
 				}
-				else if sectionID == 1 {
-					AppViewLarge(app: item)
-				}
-				else
+				.sectionHeader
 				{
-					AppViewCompact(app: item)
+					self.header(withTitle: sectionData.sectionTitle)
 				}
-			}
-			.sectionHeader
-			{
-				self.header(withTitle: sectionData.sectionTitle)
 			}
 		}
 	}
@@ -149,7 +149,8 @@ extension AppStoreScreen
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(1.0),
 							heightDimension: .fractionalHeight(1.0)),
-						subitem: item, count: 2)
+						subitem: item,
+						count: 2)
 					itemsGroup.interItemSpacing = .fixed(10)
 
 					let nestedGroup = NSCollectionLayoutGroup.horizontal(
@@ -186,7 +187,8 @@ extension AppStoreScreen
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(1.0),
 							heightDimension: .fractionalHeight(1.0)),
-						subitem: item, count: 3)
+						subitem: item,
+						count: 3)
 					itemsGroup.interItemSpacing = .fixed(10)
 
 					let nestedGroup = NSCollectionLayoutGroup.horizontal(

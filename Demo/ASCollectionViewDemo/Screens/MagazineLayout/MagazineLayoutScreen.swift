@@ -7,34 +7,39 @@ import UIKit
 
 struct MagazineLayoutScreen: View
 {
-	@State var data: [[Post]] = (0...5).map
+	@State var data: [[Post]] = (0 ... 5).map
 	{
 		DataSource.postsForGridSection($0, number: 10)
 	}
 
-	var sections: [ASCollectionViewSection<Int>]
+	var sections: [ASSection<Int>]
 	{
 		data.enumerated().map
-		{ (offset, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(id: offset, data: sectionData, onCellEvent: onCellEvent)
-			{ item, _ in
-				ASRemoteImageView(item.url)
-					.aspectRatio(1, contentMode: .fit)
-					.contextMenu
-				{
-					Text("Test item")
-					Text("Another item")
+		{ (arg) -> ASSection<Int> in
+
+			let (offset, sectionData) = arg
+			return ASSection(id: offset) {
+				ASSectionDataSource(data: sectionData)
+				{ item, _ in
+					ASRemoteImageView(item.url)
+						.aspectRatio(1, contentMode: .fit)
+						.contextMenu
+					{
+						Text("Test item")
+						Text("Another item")
+					}
 				}
-			}
-			.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
-			{
-				HStack
+				.onCellEvent(onCellEvent)
+				.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
 				{
-					Text("Section \(offset)")
-						.padding()
-					Spacer()
+					HStack
+					{
+						Text("Section \(offset)")
+							.padding()
+						Spacer()
+					}
+					.background(Color.blue)
 				}
-				.background(Color.blue)
 			}
 		}
 	}

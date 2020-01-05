@@ -22,40 +22,39 @@ struct AdjustableGridScreen: View
 
 	typealias SectionID = Int
 
-	var section: ASCollectionViewSection<SectionID>
+	var section: ASSection<SectionID>
 	{
-		ASCollectionViewSection(
-			id: 0,
-			data: data,
-			onCellEvent: onCellEvent)
-		{ item, state in
-			ZStack(alignment: .bottomTrailing)
-			{
-				GeometryReader
-				{ geom in
-					ASRemoteImageView(item.url)
-						.aspectRatio(1, contentMode: .fill)
-						.frame(width: geom.size.width, height: geom.size.height)
-						.clipped()
-						.opacity(state.isSelected ? 0.7 : 1.0)
-				}
-
-				if state.isSelected
+		ASSection(id: 0) {
+			ASSectionDataSource(data: data) { item, state in
+				ZStack(alignment: .bottomTrailing)
 				{
-					ZStack
-					{
-						Circle()
-							.fill(Color.blue)
-						Circle()
-							.strokeBorder(Color.white, lineWidth: 2)
-						Image(systemName: "checkmark")
-							.font(.system(size: 10, weight: .bold))
-							.foregroundColor(.white)
+					GeometryReader
+					{ geom in
+						ASRemoteImageView(item.url)
+							.aspectRatio(1, contentMode: .fill)
+							.frame(width: geom.size.width, height: geom.size.height)
+							.clipped()
+							.opacity(state.isSelected ? 0.7 : 1.0)
 					}
-					.frame(width: 20, height: 20)
-					.padding(10)
+
+					if state.isSelected
+					{
+						ZStack
+						{
+							Circle()
+								.fill(Color.blue)
+							Circle()
+								.strokeBorder(Color.white, lineWidth: 2)
+							Image(systemName: "checkmark")
+								.font(.system(size: 10, weight: .bold))
+								.foregroundColor(.white)
+						}
+						.frame(width: 20, height: 20)
+						.padding(10)
+					}
 				}
 			}
+			.onCellEvent(onCellEvent)
 		}
 	}
 
@@ -63,9 +62,9 @@ struct AdjustableGridScreen: View
 	{
 		VStack
 		{
-			Stepper("Number of columns", value: self.$layoutState.numberOfColumns, in: 0...10)
+			Stepper("Number of columns", value: self.$layoutState.numberOfColumns, in: 0 ... 10)
 				.padding()
-			Stepper("Item inset", value: self.$layoutState.itemInset, in: 0...5)
+			Stepper("Item inset", value: self.$layoutState.itemInset, in: 0 ... 5)
 				.padding()
 			Toggle(isOn: self.$animateChange) { Text("Animate layout change") }
 				.padding()
@@ -80,10 +79,9 @@ struct AdjustableGridScreen: View
 			{
 				config
 			}
-			ASCollectionView(
-				section: section)
+			ASCollectionView(section: section)
 				.layout(self.layout)
-				.shouldInvalidateLayoutOnStateChange(true, animated: self.animateChange) ///////////////////////// TELLS ASCOLLECTIONVIEW TO INVALIDATE THE LAYOUT WHEN THE VIEW IS UPDATED
+				.shouldInvalidateLayoutOnStateChange(true, animated: self.animateChange) /// ////////////////////// TELLS ASCOLLECTIONVIEW TO INVALIDATE THE LAYOUT WHEN THE VIEW IS UPDATED
 				.navigationBarTitle("Adjustable Layout", displayMode: .inline)
 		}
 		.navigationBarItems(
@@ -127,10 +125,9 @@ extension AdjustableGridScreen
 			ASCollectionLayoutSection
 			{
 				let gridBlockSize = NSCollectionLayoutDimension.fractionalWidth(1 / CGFloat(self.layoutState.numberOfColumns))
-				let item = NSCollectionLayoutItem(
-					layoutSize: NSCollectionLayoutSize(
-						widthDimension: gridBlockSize,
-						heightDimension: .fractionalHeight(1.0)))
+				let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+					widthDimension: gridBlockSize,
+					heightDimension: .fractionalHeight(1.0)))
 				let inset = CGFloat(self.layoutState.itemInset)
 				item.contentInsets = NSDirectionalEdgeInsets(top: inset, leading: inset, bottom: inset, trailing: inset)
 

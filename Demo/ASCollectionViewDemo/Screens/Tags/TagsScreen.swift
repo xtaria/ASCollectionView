@@ -27,17 +27,17 @@ struct TagsScreen: View
 			Text("Tags:")
 				.font(.title)
 
-			ASCollectionView(
-				section:
-				ASCollectionViewSection(id: 0, data: store.items)
+			ASCollectionView {
+				ASSectionDataSource(data: store.items)
 				{ item, _ in
 					Text(item.displayString)
 						.fixedSize()
 						.padding(5)
 						.background(Color(.systemGray))
 						.cornerRadius(5)
-			})
-				.layout
+				}
+			}
+			.layout
 			{
 				let fl = AlignedFlowLayout()
 				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
@@ -138,7 +138,7 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 		}
 		guard
 			indexPath.item > 0,
-			let previousAttributes = self.layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section))
+			let previousAttributes = layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section))
 		else
 		{
 			attributes.frame.origin.x = leftEdge // first item of the section should always be left aligned
