@@ -5,6 +5,7 @@ import SwiftUI
 
 // MARK: Init for single-section CV
 
+@available(iOS 13.0, *)
 extension ASCollectionView where SectionID == Int
 {
 	/**
@@ -27,10 +28,11 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	public func `static`(@ViewArrayBuilder staticContent: () -> [AnyView]) -> ASCollectionView
+	public init(@ViewArrayBuilder staticContent: () -> [AnyView])
 	{
-		// NOTE: using function instead of init, as this clashed with the SectionBuilder function
-		ASCollectionView(sections: [ASSection(id: 0, content: staticContent)])
+		self.init(sections:  [
+			ASSection(id: 0, content: staticContent)
+		])
 	}
 
 	/**
@@ -53,6 +55,7 @@ extension ASCollectionView where SectionID == Int
 	}
 }
 
+@available(iOS 13.0, *)
 public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
 	// MARK: Type definitions
@@ -556,6 +559,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 // MARK: OnReachedBoundary support
 
+@available(iOS 13.0, *)
 extension ASCollectionView.Coordinator
 {
 	public func scrollViewDidScroll(_ scrollView: UIScrollView)
@@ -604,6 +608,7 @@ extension ASCollectionView.Coordinator
 
 // MARK: Modifer: Custom Delegate
 
+@available(iOS 13.0, *)
 public extension ASCollectionView
 {
 	/// Use this modifier to assign a custom delegate type (subclass of ASCollectionViewDelegate). This allows support for old UICollectionViewLayouts that require a delegate.
@@ -617,6 +622,7 @@ public extension ASCollectionView
 
 // MARK: Modifer: Layout Invalidation
 
+@available(iOS 13.0, *)
 public extension ASCollectionView
 {
 	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
@@ -644,6 +650,7 @@ public extension ASCollectionView
 
 // MARK: Coordinator Protocol
 
+@available(iOS 13.0, *)
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
 	func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
@@ -666,7 +673,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 }
 
 // MARK: Custom Prefetching Implementation
-
+@available(iOS 13.0, *)
 extension ASCollectionView.Coordinator
 {
 	func setupPrefetching()
@@ -741,6 +748,7 @@ extension ASCollectionView.Coordinator
 	}
 }
 
+@available(iOS 13.0, *)
 public enum ASCollectionViewScrollPosition
 {
 	case top
@@ -750,6 +758,7 @@ public enum ASCollectionViewScrollPosition
 	case centerOnIndexPath(_: IndexPath)
 }
 
+@available(iOS 13.0, *)
 public class AS_CollectionViewController: UIViewController
 {
 	weak var coordinator: ASCollectionViewCoordinator?
@@ -829,6 +838,7 @@ public class AS_CollectionViewController: UIViewController
 	}
 }
 
+@available(iOS 13.0, *)
 public extension ASCollectionView
 {
 	func layout(_ layout: Layout) -> Self

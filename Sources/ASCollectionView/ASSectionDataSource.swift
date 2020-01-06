@@ -3,6 +3,7 @@
 import Foundation
 import SwiftUI
 
+@available(iOS 13.0, *)
 internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
@@ -34,6 +35,7 @@ internal protocol ASSectionDataSourceProtocol
 	var estimatedFooterHeight: CGFloat? { get set }
 }
 
+@available(iOS 13.0, *)
 public enum CellEvent<Data>
 {
 	/// Respond by starting necessary prefetch operations for this data to be displayed soon (eg. download images)
@@ -49,17 +51,26 @@ public enum CellEvent<Data>
 	case onDisappear(item: Data)
 }
 
+@available(iOS 13.0, *)
 public enum DragDrop<Data>
 {
 	case onRemoveItem(indexPath: IndexPath)
 	case onAddItems(items: [Data], atIndexPath: IndexPath)
 }
 
+@available(iOS 13.0, *)
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
+
+@available(iOS 13.0, *)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
+
+@available(iOS 13.0, *)
 public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
+
+@available(iOS 13.0, *)
 public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
 
+@available(iOS 13.0, *)
 public struct CellContext
 {
 	public var isSelected: Bool
@@ -67,6 +78,7 @@ public struct CellContext
 	public var isLastInSection: Bool
 }
 
+@available(iOS 13.0, *)
 public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View, Container: View>: ASSectionDataSourceProtocol where DataCollection.Index == Int
 {
 	var data: DataCollection
@@ -218,6 +230,7 @@ public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID
 
 // MARK: SUPPLEMENTARY VIEWS - INTERNAL
 
+@available(iOS 13.0, *)
 internal extension ASSectionDataSource
 {
 	mutating func setHeaderView<Content: View>(_ view: Content?)
@@ -244,6 +257,7 @@ internal extension ASSectionDataSource
 
 // MARK: PUBLIC Initialisers
 
+@available(iOS 13.0, *)
 public extension ASSectionDataSource {
 	/**
 	 Initializes a  section with data
@@ -269,6 +283,7 @@ public extension ASSectionDataSource {
 	}
 }
 
+@available(iOS 13.0, *)
 public extension ASSectionDataSource where Container == Content
 {
 	init(
@@ -283,48 +298,10 @@ public extension ASSectionDataSource where Container == Content
 	}
 }
 
-// MARK: STATIC CONTENT SECTION
-
-/*
- public extension ASSectionDataSource where DataCollection == [ASCollectionViewStaticContent], DataID == ASCollectionViewStaticContent.ID, Content == AnyView, Container == Content
- {
- /**
-       Initializes a section with static content
-
-       - Parameters:
-       - id: The id for this section
-       - content: A closure returning a number of SwiftUI views to display in the collection view
-  */
- init(@ViewArrayBuilder content: () -> [AnyView])
- {
- 	self.data = content().enumerated().map
- 		{
- 			ASCollectionViewStaticContent(index: $0.offset, view: $0.element)
- 	}
- 	self.dataIDKeyPath = \.id
- 	self.container = { $0 }
- 	self.content = { staticContent, _ in staticContent.view }
- }
-
- /**
-       Initializes a section with a single view
-
-       - Parameters:
-       - id: The id for this section
-       - content: A single SwiftUI views to display in the collection view
-  */
- init<StaticItem: View>(container: @escaping ((AnyView) -> Container), content: () -> StaticItem)
- {
- 	self.data = [ASCollectionViewStaticContent(index: 0, view: AnyView(content()))]
- 	self.dataIDKeyPath = \.id
- 	self.container = { $0 }
- 	self.content = { staticContent, _ in staticContent.view }
- }
-
- }*/
 
 // MARK: IDENTIFIABLE DATA SECTION
 
+@available(iOS 13.0, *)
 public extension ASSectionDataSource where DataCollection.Element: Identifiable, DataID == DataCollection.Element.ID
 {
 	/**
@@ -349,6 +326,7 @@ public extension ASSectionDataSource where DataCollection.Element: Identifiable,
 	}
 }
 
+@available(iOS 13.0, *)
 public extension ASSectionDataSource where DataCollection.Element: Identifiable, DataID == DataCollection.Element.ID, Container == Content
 {
 	init(
@@ -361,6 +339,7 @@ public extension ASSectionDataSource where DataCollection.Element: Identifiable,
 
 // MARK: PUBLIC MODIFIERS (DATA-SPECIFIC)
 
+@available(iOS 13.0, *)
 public extension ASSectionDataSource {
 	func onCellEvent(_ onCellEvent: OnCellEvent<DataCollection.Element>?) -> Self
 	{
