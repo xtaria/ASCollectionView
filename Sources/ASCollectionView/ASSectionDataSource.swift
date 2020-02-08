@@ -22,6 +22,8 @@ internal protocol ASSectionDataSourceProtocol
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
+
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 
@@ -71,6 +73,9 @@ public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
 
 @available(iOS 13.0, *)
+public typealias ContextMenuProvider<Data> = ((_ item: Data) -> UIContextMenuConfiguration?)
+
+@available(iOS 13.0, *)
 public struct CellContext
 {
 	public var isSelected: Bool
@@ -91,6 +96,7 @@ public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID
 	var onDragDrop: OnDragDrop<DataCollection.Element>?
 	var itemProvider: ItemProvider<DataCollection.Element>?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
+	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
 
 	// Only relevant for ASTableView
 	public var estimatedRowHeight: CGFloat?
@@ -98,7 +104,6 @@ public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID
 	public var estimatedFooterHeight: CGFloat?
 
 	// MARK: Calculated vars
-
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
@@ -225,6 +230,16 @@ public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID
 			return item
 		}
 		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: indexPath))
+	}
+	
+	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
+	{
+		guard
+			let menuProvider = contextMenuProvider,
+			let item = data[safe: indexPath.item]
+			else { return nil }
+		
+		return menuProvider(item)
 	}
 }
 
@@ -366,6 +381,13 @@ public extension ASSectionDataSource {
 	{
 		var dataSource = self
 		dataSource.onSwipeToDelete = onSwipeToDelete
+		return dataSource
+	}
+	
+	func contextMenuProvider(_ contextMenuProvider: ContextMenuProvider<DataCollection.Element>?) -> Self
+	{
+		var dataSource = self
+		dataSource.contextMenuProvider = contextMenuProvider
 		return dataSource
 	}
 }

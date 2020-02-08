@@ -56,7 +56,6 @@ public struct ASSection<SectionID: Hashable>
 
 	/**
 	 Initializes a  section with a datasource
-
 	 - Parameters:
 	 - id: The id for this section
 	 - dataSource: The datasource
@@ -71,6 +70,7 @@ public struct ASSection<SectionID: Hashable>
 }
 
 // MARK: STATIC CONTENT SECTION
+
 @available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
@@ -81,11 +81,11 @@ public extension ASCollectionViewSection
 	 - id: The id for this section
 	 - content: A closure returning a number of SwiftUI views to display in the collection view
 	 */
-	init<Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), @ViewArrayBuilder content: () -> [AnyView])
+	init<Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper)
 	{
 		self.id = id
 		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
-			data: content().enumerated().map
+			data: content().flattened().enumerated().map
 			{
 				ASCollectionViewStaticContent(index: $0.offset, view: $0.element)
 			},
@@ -94,7 +94,7 @@ public extension ASCollectionViewSection
 			content: { staticContent, _ in staticContent.view })
 	}
 
-	init(id: SectionID, @ViewArrayBuilder content: () -> [AnyView]) {
+	init(id: SectionID, @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper) {
 		self.init(id: id, container: { $0 }, content: content)
 	}
 
@@ -120,8 +120,8 @@ public extension ASCollectionViewSection
 	}
 }
 
-// MARK: Supplementary Views
 
+// MARK: Supplementary Views
 @available(iOS 13.0, *)
 public extension ASSection
 {
@@ -143,6 +143,27 @@ public extension ASSection
 	{
 		var section = self
 		section.dataSource.setSupplementaryView(content(), ofKind: kind)
+		return section
+	}
+}
+
+
+// MARK: ASTableView specific header modifiers
+
+@available(iOS 13.0, *)
+public extension ASTableViewSection {
+	func sectionHeaderInsetGrouped<Content: View>(content: () -> Content?) -> Self
+	{
+		var section = self
+		let insetGroupedContent =
+			HStack {
+				content()
+				Spacer()
+			}
+			.font(.headline)
+			.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
+		
+		section.dataSource.setHeaderView(insetGroupedContent)
 		return section
 	}
 }

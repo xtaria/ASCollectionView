@@ -15,21 +15,15 @@ struct MagazineLayoutScreen: View
 	var sections: [ASSection<Int>]
 	{
 		data.enumerated().map
-		{ (arg) -> ASSection<Int> in
-
-			let (offset, sectionData) = arg
+		{ (offset, sectionData) -> ASSection<Int> in
 			return ASSection(id: offset) {
 				ASSectionDataSource(data: sectionData)
 				{ item, _ in
 					ASRemoteImageView(item.url)
 						.aspectRatio(1, contentMode: .fit)
-						.contextMenu
-					{
-						Text("Test item")
-						Text("Another item")
-					}
 				}
 				.onCellEvent(onCellEvent)
+				.contextMenuProvider(contextMenuProvider)
 			}
 			.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
 			{
@@ -51,7 +45,7 @@ struct MagazineLayoutScreen: View
 			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Magazine Layout (custom delegate)", displayMode: .inline)
-			.onCollectionViewReachedBoundary
+			.collectionViewOnReachedBoundary
 		{ boundary in
 			print("Reached the \(boundary) boundary")
 		}
@@ -76,6 +70,16 @@ struct MagazineLayoutScreen: View
 				ASRemoteImageManager.shared.cancelLoad(for: item.url)
 			}
 		}
+	}
+	
+	func contextMenuProvider(_ post: Post) -> UIContextMenuConfiguration? {
+		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (suggestedActions) -> UIMenu? in
+			let testAction = UIAction(title: "Test") { (action) in
+				//
+			}
+			return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [testAction])
+		}
+		return configuration
 	}
 }
 
