@@ -301,7 +301,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
 		{
-			guard collectionViewController?.parent != nil else { return }
+			guard hasDoneInitialSetup else { return }
 			registerSupplementaries(forCollectionView: cv) // New sections might involve new types of supplementary...
 			if refreshExistingCells
 			{
@@ -425,7 +425,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			if parent.shouldRecreateLayoutOnStateChange
 			{
 				let newLayout = parent.layout.makeLayout(withCoordinator: self)
-				collectionViewController.collectionView.setCollectionViewLayout(newLayout, animated: parent.shouldAnimateRecreatedLayoutOnStateChange && collectionViewController.parent != nil)
+				collectionViewController.collectionView.setCollectionViewLayout(newLayout, animated: parent.shouldAnimateRecreatedLayoutOnStateChange && hasDoneInitialSetup)
 			}
 			// If enabled, invalidate the layout
 			else if parent.shouldInvalidateLayoutOnStateChange
@@ -434,7 +434,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					collectionViewController.collectionViewLayout.invalidateLayout()
 					collectionViewController.collectionView.layoutIfNeeded()
 				}
-				if parent.shouldAnimateInvalidatedLayoutOnStateChange, collectionViewController.parent != nil
+				if parent.shouldAnimateInvalidatedLayoutOnStateChange, hasDoneInitialSetup
 				{
 					UIView.animate(
 						withDuration: 0.4,
