@@ -171,7 +171,7 @@ public extension ASSection {
 				Spacer()
 			}
 			.font(.headline)
-			.padding(EdgeInsets(top: 16, leading: 0, bottom: 6, trailing: 0))
+			.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
 
 		section.dataSource.setHeaderView(insetGroupedContent)
 		return section
