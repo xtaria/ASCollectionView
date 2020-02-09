@@ -65,6 +65,7 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 			width: selfSizeHorizontal ? .infinity : size.width,
 			height: selfSizeVertical ? .infinity : size.height
 		).applyMaxSize(maxSize)
+		
 		// Find the desired size
 		var desiredSize = uiHostingController.sizeThatFits(in: fittingSize)
 

@@ -71,12 +71,7 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 {
 	override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool
 	{
-		if let collectionView = self.collectionView
-		{
-			return collectionView.frame.width != newBounds.width // We only care about changes in the width
-		}
-
-		return false
+		return true
 	}
 
 	override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]?

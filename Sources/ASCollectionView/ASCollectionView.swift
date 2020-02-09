@@ -253,14 +253,15 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 				cell.maxSizeForSelfSizing = ASOptionalSize(width: self.parent.allowCellWidthToExceedCollectionContentSize ? nil : collectionView.contentSize.width,
 														   height: self.parent.allowCellHeightToExceedCollectionContentSize ? nil : collectionView.contentSize.height)
-				cell.selfSizeHorizontal =
-					self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath)
-					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizeHorizontally
-					?? true
-				cell.selfSizeVertical =
-					self.delegate?.collectionView(cellShouldSelfSizeVerticallyForItemAt: indexPath)
-					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizeVertically
-					?? true
+				//Self Sizing Settings
+				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
+				cell.selfSizingConfig =
+					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
+					?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
+					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
+					?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+				
+				//Cell Content Setup
 				cell.setupFor(
 					id: itemID,
 					hostingController: hostController)
@@ -274,12 +275,22 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
 				else { return nil }
+				
+				//Self Sizing Settings
+				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(kind), indexPath: indexPath)
+				reusableView.selfSizingConfig =
+					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
+					?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
+					?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+				
+				//Supplementary Content Setup
 				if let supplementaryView = self.parent.sections[safe: indexPath.section]?.dataSource.supplementary(ofKind: kind)
 				{
 					reusableView.setupFor(
 						id: indexPath.section,
 						view: supplementaryView)
 				}
+				
 				return reusableView
 			}
 			setupPrefetching()
@@ -341,6 +352,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				// Set initial scroll position
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
 			}
+		}
+		
+		func onMoveFromParent() {
+			hasDoneInitialSetup = false
 		}
 
 		// MARK: Functions for determining scroll position (on appear, and also on orientation change)
@@ -703,6 +718,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func didUpdateContentSize(_ size: CGSize)
 	func scrollViewDidScroll(_ scrollView: UIScrollView)
 	func onMoveToParent()
+	func onMoveFromParent()
 }
 
 // MARK: Custom Prefetching Implementation
@@ -820,7 +836,11 @@ public class AS_CollectionViewController: UIViewController
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
-		coordinator?.onMoveToParent()
+		if parent != nil {
+			coordinator?.onMoveToParent()
+		} else {
+			coordinator?.onMoveFromParent()
+		}
 	}
 
 	public override func viewDidLoad()

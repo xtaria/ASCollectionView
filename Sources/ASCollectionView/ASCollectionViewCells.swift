@@ -18,6 +18,7 @@ class ASCollectionViewCell: UICollectionViewCell
 		}
 	}
 	
+	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
@@ -69,9 +70,6 @@ class ASCollectionViewCell: UICollectionViewCell
 		}
 	}
 
-	var selfSizeHorizontal: Bool = true
-	var selfSizeVertical: Bool = true
-
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else
@@ -81,8 +79,8 @@ class ASCollectionViewCell: UICollectionViewCell
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
-			selfSizeHorizontal: selfSizeHorizontal,
-			selfSizeVertical: selfSizeVertical)
+			selfSizeHorizontal: selfSizingConfig.selfSizeHorizontally,
+			selfSizeVertical: selfSizingConfig.selfSizeVertically)
 		return size
 	}
 
@@ -149,6 +147,8 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		hostingController?.viewController.view.frame = bounds
 		hostingController?.viewController.view.setNeedsLayout()
 	}
+	
+	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
@@ -156,8 +156,9 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
-			selfSizeHorizontal: true,
-			selfSizeVertical: true)
+			selfSizeHorizontal: selfSizingConfig.selfSizeHorizontally,
+			selfSizeVertical: selfSizingConfig.selfSizeVertically)
+		
 		return size
 	}
 

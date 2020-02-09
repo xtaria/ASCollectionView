@@ -23,11 +23,14 @@ internal protocol ASSectionDataSourceProtocol
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
+	
+	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 
 	// Non-Data specific -> Set from ASSection
+	mutating func setSelfSizingConfig(config: SelfSizingConfig?)
 	mutating func setHeaderView<Content: View>(_ view: Content?)
 	mutating func setFooterView<Content: View>(_ view: Content?)
 	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String)
@@ -76,6 +79,9 @@ public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> 
 public typealias ContextMenuProvider<Data> = ((_ item: Data) -> UIContextMenuConfiguration?)
 
 @available(iOS 13.0, *)
+public typealias SelfSizingConfig = ((_ context: ASSelfSizingContext) -> ASSelfSizingConfig?)
+
+@available(iOS 13.0, *)
 public struct CellContext
 {
 	public var isSelected: Bool
@@ -97,6 +103,7 @@ public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID
 	var itemProvider: ItemProvider<DataCollection.Element>?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
+	var selfSizingConfig: SelfSizingConfig?
 
 	// Only relevant for ASTableView
 	public var estimatedRowHeight: CGFloat?
@@ -241,10 +248,24 @@ public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID
 		
 		return menuProvider(item)
 	}
+	
+	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig? {
+		return selfSizingConfig?(context)
+	}
+}
+
+// MARK: SELF SIZING MODIFIERS - INTERNAL
+
+@available(iOS 13.0, *)
+internal extension ASSectionDataSource
+{
+	mutating func setSelfSizingConfig(config: SelfSizingConfig?)
+	{
+		selfSizingConfig = config
+	}
 }
 
 // MARK: SUPPLEMENTARY VIEWS - INTERNAL
-
 @available(iOS 13.0, *)
 internal extension ASSectionDataSource
 {

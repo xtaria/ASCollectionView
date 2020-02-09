@@ -120,6 +120,17 @@ public extension ASCollectionViewSection
 	}
 }
 
+// MARK: Self-sizing config
+@available(iOS 13.0, *)
+public extension ASSection
+{
+	func selfSizingConfig(config: SelfSizingConfig?) -> Self
+	{
+		var section = self
+		section.dataSource.setSelfSizingConfig(config: config)
+		return section
+	}
+}
 
 // MARK: Supplementary Views
 @available(iOS 13.0, *)
@@ -143,27 +154,6 @@ public extension ASSection
 	{
 		var section = self
 		section.dataSource.setSupplementaryView(content(), ofKind: kind)
-		return section
-	}
-}
-
-
-// MARK: ASTableView specific header modifiers
-
-@available(iOS 13.0, *)
-public extension ASTableViewSection {
-	func sectionHeaderInsetGrouped<Content: View>(content: () -> Content?) -> Self
-	{
-		var section = self
-		let insetGroupedContent =
-			HStack {
-				content()
-				Spacer()
-			}
-			.font(.headline)
-			.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
-		
-		section.dataSource.setHeaderView(insetGroupedContent)
 		return section
 	}
 }

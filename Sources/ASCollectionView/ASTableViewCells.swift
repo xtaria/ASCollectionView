@@ -18,6 +18,7 @@ class ASTableViewCell: UITableViewCell
 		}
 	}
 	
+	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
@@ -68,8 +69,6 @@ class ASTableViewCell: UITableViewCell
 		}
 	}
 
-	var selfSizeVertical: Bool = true
-
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else { return .zero }
@@ -77,7 +76,7 @@ class ASTableViewCell: UITableViewCell
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
 			selfSizeHorizontal: false,
-			selfSizeVertical: selfSizeVertical)
+			selfSizeVertical: selfSizingConfig.selfSizeVertically)
 		return size
 	}
 
@@ -93,6 +92,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	var hostingController: ASHostingControllerProtocol?
 	private(set) var id: Int?
 	
+	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	override init(reuseIdentifier: String?)
@@ -163,8 +163,8 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
-			selfSizeHorizontal: true,
-			selfSizeVertical: true)
+			selfSizeHorizontal: false,
+			selfSizeVertical: selfSizingConfig.selfSizeVertically)
 		return size
 	}
 

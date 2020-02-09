@@ -201,10 +201,20 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell,
 					let hostController = self.configureHostingController(forItemID: itemID, isSelected: isSelected)
 				else { return nil }
+				
+				//Cell layout invalidation callback
 				cell.invalidateLayout = {
 					tv.beginUpdates()
 					tv.endUpdates()
 				}
+				
+				//Self Sizing Settings
+				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
+				cell.selfSizingConfig =
+					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
+					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
+				
+				//Cell Content Setup
 				cell.setupFor(
 					id: itemID,
 					hostingController: hostController)
@@ -243,7 +253,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			updateSelectionBindings(tv)
 		}
 
-		func onMoveToParent(_ parentController: AS_TableViewController)
+		func onMoveToParent(tableViewController: AS_TableViewController)
 		{
 			if !hasDoneInitialSetup
 			{
@@ -253,8 +263,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				populateDataSource(animated: false)
 
 				// Check if reached bottom already
-				checkIfReachedBottom(parentController.tableView)
+				checkIfReachedBottom(tableViewController.tableView)
 			}
+		}
+		
+		func onMoveFromParent() {
+			hasDoneInitialSetup = false
 		}
 
 		func configureRefreshControl(for tv: UITableView)
@@ -443,6 +457,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			else { return nil }
 			if let supplementaryView = parent.sections[safe: section]?.dataSource.supplementary(ofKind: UICollectionView.elementKindSectionHeader)
 			{
+				//Self Sizing Settings
+				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(UICollectionView.elementKindSectionHeader), indexPath: IndexPath(row: 0, section: section))
+				reusableView.selfSizingConfig =
+					self.parent.sections[safe: section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
+					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
+				
+				//Cell Content Setup
 				reusableView.setupFor(
 					id: section,
 					view: supplementaryView)
@@ -456,6 +477,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			else { return nil }
 			if let supplementaryView = parent.sections[safe: section]?.dataSource.supplementary(ofKind: UICollectionView.elementKindSectionFooter)
 			{
+				//Self Sizing Settings
+				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(UICollectionView.elementKindSectionFooter), indexPath: IndexPath(row: 0, section: section))
+				reusableView.selfSizingConfig =
+					self.parent.sections[safe: section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
+					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
+				
+				//Cell Content Setup
 				reusableView.setupFor(
 					id: section,
 					view: supplementaryView)
@@ -490,7 +518,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 @available(iOS 13.0, *)
 protocol ASTableViewCoordinator: AnyObject
 {
-	func onMoveToParent(_ parentController: AS_TableViewController)
+	func onMoveToParent(tableViewController: AS_TableViewController)
+	func onMoveFromParent()
 }
 
 @available(iOS 13.0, *)
@@ -533,7 +562,11 @@ public class AS_TableViewController: UIViewController
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
-		coordinator?.onMoveToParent(self)
+		if parent != nil {
+			coordinator?.onMoveToParent(tableViewController: self)
+		} else {
+			coordinator?.onMoveFromParent()
+		}
 	}
 }
 
