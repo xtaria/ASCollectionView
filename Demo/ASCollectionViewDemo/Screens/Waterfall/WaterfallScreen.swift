@@ -22,7 +22,7 @@ struct WaterfallScreen: View
 	var sections: [ASCollectionViewSection<SectionID>]
 	{
 		data.enumerated().map { (offset, sectionData) in
-			ASSection(id: 0) {
+			ASSection(id: offset) {
 				ASSectionDataSource(data: sectionData) { item, state in
 					GeometryReader
 						{ geom in
