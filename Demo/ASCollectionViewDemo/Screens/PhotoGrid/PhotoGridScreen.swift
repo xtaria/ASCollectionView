@@ -69,8 +69,9 @@ struct PhotoGridScreen: View
 			selectedItems: $selectedItems,
 			section: section)
 			.layout(self.layout)
+			.edgesIgnoringSafeArea(.all)
 			.collectionViewInitialScrollPosition(startingAtBottom ? .bottom : nil)
-			.navigationBarTitle("Explore", displayMode: .inline)
+			.navigationBarTitle("Explore", displayMode: .large)
 			.navigationBarItems(
 				trailing:
 				HStack(spacing: 20)
