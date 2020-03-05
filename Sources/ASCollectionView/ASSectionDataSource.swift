@@ -8,7 +8,7 @@ internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func configureHostingController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
+	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	var supplementaryKinds: Set<String> { get }
 	func supplementary(ofKind kind: String) -> AnyView?
@@ -131,23 +131,16 @@ public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID
 			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
 			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
 	}
-
-	func configureHostingController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
-	{
-		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
+	
+	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) {
+		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else {
+			cell.configureAsEmpty()
+			return
+		}
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
-		let containedView = container(view)
-
-		if let existingHC = reusingController as? ASHostingController<Container>
-		{
-			existingHC.setView(containedView)
-			return existingHC
-		}
-		else
-		{
-			let newHC = ASHostingController<Container>(containedView)
-			return newHC
-		}
+		let content = container(view)
+		
+		cell.configureHostingController(forItemID: itemID, content: content)
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?

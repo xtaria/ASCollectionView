@@ -160,8 +160,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		private var hasDoneInitialSetup = false
 
-		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
-
 		typealias Cell = ASTableViewCell
 
 		init(_ parent: ASTableView)
@@ -180,14 +178,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				.first(where: { $0.id.hashValue == itemID.sectionIDHash })
 		}
 
-		@discardableResult
-		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
-		{
-			let controller = section(forItemID: itemID)?.dataSource.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID, isSelected: isSelected)
-			hostingControllerCache[itemID] = controller
-			return controller
-		}
-
 		func setupDataSource(forTableView tv: UITableView)
 		{
 			tv.delegate = self
@@ -199,8 +189,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			{ (tableView, indexPath, itemID) -> UITableViewCell? in
 				let isSelected = tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
 				guard
-					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell,
-					let hostController = self.configureHostingController(forItemID: itemID, isSelected: isSelected)
+					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
 				
 				//Cell layout invalidation callback
@@ -215,10 +204,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
 					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 				
-				//Cell Content Setup
-				cell.setupFor(
-					id: itemID,
-					hostingController: hostController)
+				//Configure cell
+				self.section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: isSelected)
+				
 				return cell
 			}
 			dataSource?.defaultRowAnimation = .fade
@@ -247,7 +235,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 						let itemID = cell.id
 					else { return }
 
-					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
+					//Configure cell
+					section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 				}
 			}
 			populateDataSource(animated: animated)
@@ -385,7 +374,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(tableView)
-			configureHostingController(forItemID: itemID, isSelected: true)
+			//Configure cell
+			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
@@ -395,7 +385,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(tableView)
-			configureHostingController(forItemID: itemID, isSelected: false)
+			//Configure cell
+			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		func updateSelectionBindings(_ tableView: UITableView)

@@ -4,17 +4,30 @@ import Foundation
 import SwiftUI
 
 @available(iOS 13.0, *)
-class ASCollectionViewCell: UICollectionViewCell
+protocol ASDataSourceConfigurableCell {
+	func configureAsEmpty()
+	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
+}
+
+@available(iOS 13.0, *)
+class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 {
 	var hostingController: ASHostingControllerProtocol?
 	{
 		didSet
 		{
-			let modifier = ASHostingControllerModifier(invalidateCellLayout: {
-				self.shouldInvalidateLayout = true
-				self.setNeedsLayout()
-			})
-			hostingController?.applyModifier(modifier)
+			guard hostingController !== oldValue else { return }
+			if let oldVC = oldValue?.viewController,
+				let oldParent = oldVC.parent
+			{
+				//Replace the old one if it was already visible (added to parent)
+				oldVC.removeFromParent()
+				oldVC.view.removeFromSuperview()
+				if let newVC = hostingController?.viewController {
+					oldParent.addChild(newVC)
+					contentView.addSubview(newVC.view)
+				}
+			}
 		}
 	}
 	
@@ -26,6 +39,30 @@ class ASCollectionViewCell: UICollectionViewCell
 
 	private(set) var id: ASCollectionViewItemUniqueID?
 
+	func configureAsEmpty() {
+		hostingController = nil
+	}
+	
+	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
+	{
+		self.id = itemID
+		
+		if let existingHC = hostingController as? ASHostingController<Content>
+		{
+			existingHC.setView(content)
+		}
+		else
+		{
+			let modifier = ASHostingControllerModifier(invalidateCellLayout: {
+				self.shouldInvalidateLayout = true
+				self.setNeedsLayout()
+			})
+			let newHC = ASHostingController<Content>(content, modifier: modifier)
+			hostingController = newHC
+		}
+	}
+	
+	
 	func setupFor(id: ASCollectionViewItemUniqueID, hostingController: ASHostingControllerProtocol?)
 	{
 		self.hostingController = hostingController

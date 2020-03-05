@@ -183,8 +183,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		let supplementaryReuseID = UUID().uuidString
 		let supplementaryEmptyKind = UUID().uuidString // Used to prevent crash if supplementaries defined in layout but not provided by the section
 
-		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
-
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
@@ -218,14 +216,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
-		@discardableResult
-		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
-		{
-			let controller = section(forItemID: itemID)?.dataSource.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID, isSelected: isSelected)
-			hostingControllerCache[itemID] = controller
-			return controller
-		}
-
 		func registerSupplementaries(forCollectionView cv: UICollectionView)
 		{
 			supplementaryKinds().subtracting(haveRegisteredForSupplementaryOfKind).forEach
@@ -245,9 +235,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				guard
 					let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
+				
 				let isSelected = collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
-				guard let hostController = self.configureHostingController(forItemID: itemID, isSelected: isSelected)
-				else { return cell }
+		
 				cell.invalidateLayout = {
 					collectionView.collectionViewLayout.invalidateLayout()
 				}
@@ -261,10 +251,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
 					?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
 				
-				//Cell Content Setup
-				cell.setupFor(
-					id: itemID,
-					hostingController: hostController)
+				//Configure cell
+				self.section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: isSelected)
+				
 				return cell
 			}
 			dataSource?.supplementaryViewProvider = { (cv, kind, indexPath) -> UICollectionReusableView? in
@@ -326,7 +315,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						let itemID = cell.id
 					else { return }
 
-					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
+					//Configure cell
+					section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 				}
 
 				supplementaryKinds().forEach
@@ -506,7 +496,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(collectionView)
-			configureHostingController(forItemID: itemID, isSelected: true)
+			//Configure cell
+			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
@@ -516,7 +507,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(collectionView)
-			configureHostingController(forItemID: itemID, isSelected: false)
+			//Configure cell
+			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		func updateSelectionBindings(_ collectionView: UICollectionView)
