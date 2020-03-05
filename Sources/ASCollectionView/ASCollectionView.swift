@@ -240,8 +240,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				
 				let isSelected = collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
 		
-				cell.invalidateLayout = {
-					collectionView.collectionViewLayout.invalidateLayout()
+				cell.invalidateLayout = { [weak collectionView] in
+					collectionView?.collectionViewLayout.invalidateLayout()
 				}
 				cell.maxSizeForSelfSizing = ASOptionalSize(width: self.parent.allowCellWidthToExceedCollectionContentSize ? nil : collectionView.contentSize.width,
 														   height: self.parent.allowCellHeightToExceedCollectionContentSize ? nil : collectionView.contentSize.height)
