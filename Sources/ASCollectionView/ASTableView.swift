@@ -149,7 +149,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	public class Coordinator: NSObject, ASTableViewCoordinator, UITableViewDelegate, UITableViewDataSourcePrefetching
 	{
 		var parent: ASTableView
-		var tableViewController: AS_TableViewController?
+		weak var tableViewController: AS_TableViewController?
 
 		var dataSource: ASTableViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
 
@@ -186,18 +186,19 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			tv.register(ASTableViewSupplementaryView.self, forHeaderFooterViewReuseIdentifier: supplementaryReuseID)
 
 			dataSource = .init(tableView: tv)
-			{ (tableView, indexPath, itemID) -> UITableViewCell? in
+			{ [weak self] (tableView, indexPath, itemID) -> UITableViewCell? in
+				guard let self = self else { return nil }
 				let isSelected = tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
 				
 				//Cell layout invalidation callback
-				cell.invalidateLayout = {
-					tv.beginUpdates()
-					tv.endUpdates()
+				cell.invalidateLayout = { [weak tv] in
+					tv?.beginUpdates()
+					tv?.endUpdates()
 				}
-				
+
 				//Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
 				cell.selfSizingConfig =
@@ -206,7 +207,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				
 				//Configure cell
 				self.section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: isSelected)
-				
+
 				return cell
 			}
 			dataSource?.defaultRowAnimation = .fade
