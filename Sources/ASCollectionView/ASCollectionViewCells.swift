@@ -6,7 +6,7 @@ import SwiftUI
 @available(iOS 13.0, *)
 protocol ASDataSourceConfigurableCell {
 	func configureAsEmpty()
-	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
+	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content, usingCachedController: ASHostingControllerProtocol?)
 }
 
 @available(iOS 13.0, *)
@@ -42,11 +42,15 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	func configureAsEmpty() {
 		hostingController = nil
 	}
-	
-	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
+
+	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content, usingCachedController cachedHC: ASHostingControllerProtocol?)
 	{
 		self.id = itemID
 		
+		if cachedHC != nil {
+			hostingController = cachedHC
+		}
+
 		if let existingHC = hostingController as? ASHostingController<Content>
 		{
 			existingHC.setView(content)

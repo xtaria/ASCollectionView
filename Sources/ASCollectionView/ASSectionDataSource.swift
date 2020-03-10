@@ -8,7 +8,7 @@ internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
+	func configureCell(_ cell: ASDataSourceConfigurableCell, usingCachedController cachedHC: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	var supplementaryKinds: Set<String> { get }
 	func supplementary(ofKind kind: String) -> AnyView?
@@ -31,6 +31,7 @@ internal protocol ASSectionDataSourceProtocol
 
 	// Non-Data specific -> Set from ASSection
 	mutating func setSelfSizingConfig(config: SelfSizingConfig?)
+
 	mutating func setHeaderView<Content: View>(_ view: Content?)
 	mutating func setFooterView<Content: View>(_ view: Content?)
 	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String)
@@ -132,15 +133,17 @@ public struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID
 			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
 	}
 	
-	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) {
-		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else {
+	func configureCell(_ cell: ASDataSourceConfigurableCell, usingCachedController cachedHC: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
+	{
+		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else
+		{
 			cell.configureAsEmpty()
 			return
 		}
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
 		let content = container(view)
-		
-		cell.configureHostingController(forItemID: itemID, content: content)
+
+		cell.configureHostingController(forItemID: itemID, content: content, usingCachedController: cachedHC)
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?

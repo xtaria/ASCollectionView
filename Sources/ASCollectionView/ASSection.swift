@@ -39,6 +39,8 @@ public struct ASSection<SectionID: Hashable>
 		dataSource.getUniqueItemIDs(withSectionID: id)
 	}
 
+	var shouldCacheCells: Bool = false
+
 	/**
 	 Initializes a  section with a datasource
 
@@ -128,6 +130,19 @@ public extension ASSection
 	{
 		var section = self
 		section.dataSource.setSelfSizingConfig(config: config)
+		return section
+	}
+}
+
+// MARK: Caching of cells
+@available(iOS 13.0, *)
+public extension ASSection
+{
+	// Use this modifier to make a section's cells be cached even when off-screen. This is useful for cells containing nested collection views
+	func cacheCells() -> Self
+	{
+		var section = self
+		section.shouldCacheCells = true
 		return section
 	}
 }

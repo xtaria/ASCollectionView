@@ -159,6 +159,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
+		
+		// MARK: Caching
+		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
 		typealias Cell = ASTableViewCell
 
@@ -192,8 +195,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
+
+				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
 				
-				//Cell layout invalidation callback
+				// Cell layout invalidation callback
 				cell.invalidateLayout = { [weak tv] in
 					tv?.beginUpdates()
 					tv?.endUpdates()
@@ -202,12 +207,20 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				//Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
 				cell.selfSizingConfig =
-					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
-				
-				//Configure cell
-				self.section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: isSelected)
+					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
+						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 
+				// Check if there is a cached host controller
+				let cachedHC = self.cachedHostingControllers[itemID]
+				
+				// Configure cell
+				section.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: isSelected)
+
+				// Cache the HC if needed
+				if section.shouldCacheCells {
+					self.cachedHostingControllers[itemID] = cell.hostingController
+				}
+				
 				return cell
 			}
 			dataSource?.defaultRowAnimation = .fade
@@ -236,8 +249,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 						let itemID = cell.id
 					else { return }
 
-					//Configure cell
-					section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
+					// Check if there is a cached host controller
+					let cachedHC = self.cachedHostingControllers[itemID]
+					// Configure cell
+					section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 				}
 			}
 			populateDataSource(animated: animated)
@@ -375,8 +390,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(tableView)
-			//Configure cell
-			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
+
+			// Check if there is a cached host controller
+			let cachedHC = self.cachedHostingControllers[itemID]
+			// Configure cell
+			section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
@@ -386,8 +404,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(tableView)
-			//Configure cell
-			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
+			
+			// Check if there is a cached host controller
+			let cachedHC = self.cachedHostingControllers[itemID]
+			// Configure cell
+			section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		func updateSelectionBindings(_ tableView: UITableView)

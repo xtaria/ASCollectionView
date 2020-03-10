@@ -189,6 +189,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
+		
+		// MARK: Caching
+		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
+		
 
 		typealias Cell = ASCollectionViewCell
 
@@ -237,7 +241,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				guard
 					let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
-				
+
+				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
+
 				let isSelected = collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
 		
 				cell.invalidateLayout = { [weak collectionView] in
@@ -249,13 +255,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				//Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
 				cell.selfSizingConfig =
-					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-					?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
-					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
-					?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
+						?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
+						?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
+						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+
+				// Check if there is a cached host controller
+				let cachedHC = self.cachedHostingControllers[itemID]
 				
-				//Configure cell
-				self.section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: isSelected)
+				// Configure cell
+				section.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: isSelected)
+				
+				// Cache the HC if needed
+				if section.shouldCacheCells {
+					self.cachedHostingControllers[itemID] = cell.hostingController
+				}
 
 				return cell
 			}
@@ -320,8 +334,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						let itemID = cell.id
 					else { return }
 
-					//Configure cell
-					section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
+					// Check if there is a cached host controller
+					let cachedHC = self.cachedHostingControllers[itemID]
+					// Configure cell
+					section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 				}
 
 				supplementaryKinds().forEach
@@ -501,8 +517,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(collectionView)
-			//Configure cell
-			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
+			
+			// Check if there is a cached host controller
+			let cachedHC = self.cachedHostingControllers[itemID]
+			// Configure cell
+			section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
@@ -512,8 +531,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(collectionView)
-			//Configure cell
-			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
+
+			// Check if there is a cached host controller
+			let cachedHC = self.cachedHostingControllers[itemID]
+			// Configure cell
+			section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		func updateSelectionBindings(_ collectionView: UICollectionView)
