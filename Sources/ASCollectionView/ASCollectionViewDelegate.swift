@@ -90,12 +90,12 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 					return UICollectionViewDropProposal(operation: .cancel)
 				}
 			}
-            collectionView.setNeedsDisplay()
+            collectionView.setNeedsLayout()
 			return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
 		}
 		else
 		{
-            collectionView.setNeedsDisplay()
+            collectionView.setNeedsLayout()
 			return UICollectionViewDropProposal(operation: .copy, intent: .insertAtDestinationIndexPath)
 		}
 	}
